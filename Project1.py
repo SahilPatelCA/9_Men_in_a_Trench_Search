@@ -2,6 +2,19 @@ import sys
 import time
 
 
+class Node(object):
+    def __init__(self):
+
+        self.state = []
+        self.parent = None
+
+    def set_State(self, state):
+        self.state = state
+
+    def set_Parent(self, parent):
+        self.parent = parent
+
+
 def ProjectStart():
     # problemBase = input(
     #     "Would you like to use the default puzzle or input your own? Enter '1' default or '2' custom:\n")
@@ -28,7 +41,14 @@ def ProjectStart():
 
 
 def General_Search(puzzle, heuristic):
-    print_Trench(puzzle)
+    Node_Start = Node()
+    Node_Start.set_State(puzzle)
+    queue = []
+    nodeCount = 0
+    maxQueueSize = 0
+    prntArr = []
+    checkRepeatState = {}
+
     return puzzle
 
 
