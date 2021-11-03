@@ -45,6 +45,9 @@ def ProjectStart():
     #     trenchOrder = list(map(int, input(
     #         "Enter the numbers 1-9 (using 0 for empty spots) (remember the indexs 4, 7, and 10 represent the holes in the trench). \n For example:[0,2,3,4,0(hole),5,6,0(hole),7,8,0(hole),9,1]: ").strip().split()))[:13]
     trenchOrder = [0, 2, 3, 4, 0, 5, 6, 0, 7, 8, 0, 9, 1]
+    test = [1, 2, 3, 4, 0, 5, 6, 0, 7, 0, 8, 9, 0]
+    testCorrect = [1, 2, 3, 4, 0, 5, 6, 0, 7, 8, 0, 9, 0]
+    testing = [1, 2, 0, 0, 0, 0, 3, 5, 4, 6, 8, 7, 9]
 
     searchType = input(
         "What Search would you like? Type '1' for Uniform Cost Search, '2' for A* Misplaced Tile Heurisitic, or '3' for A* Manhattan Distance Heuristic:\n")
@@ -53,7 +56,7 @@ def ProjectStart():
 
     start = time.time()
     # passes in the list and heuristic value
-    General_Search(trenchOrder, searchType)
+    General_Search(testing, searchType)
     end = time.time()
     print("Total Time: {}".format(end-start))  # prints total time of search
     return
@@ -72,7 +75,6 @@ def General_Search(puzzle, heuristic):
     prntArr = []
     repeatStates = {}
     currHeuristic = 0
-    nodeWeight = 0
 
     # queue.append(Node_Start)
     heapq.heappush(queue, (0, Node_Start))
@@ -97,11 +99,25 @@ def General_Search(puzzle, heuristic):
             depthCount = currNode.depth
             # loops backwards tracing goal states parents until reaching start node
             while currNode.parent != None:
-                prntArr.append(currNode.state)
+                # prntArr.append(currNode.state)
+                hn = int(currNode.weight) - int(currNode.depth)
+                gn = currNode.depth
+                print("The best state to expand is below with g(n) == ",
+                      gn, " and h(n) == ", currNode.weight)
+                print_Trench(currNode.state)
+                print("Current Depth: ", depthCount)
+                depthCount -= 1
+                print("\n\n")
                 currNode = currNode.parent
 
-            while len(prntArr) > 0:
-                print_Trench(prntArr.pop())
+            # while len(prntArr) > 0:
+            #     print_Trench(prntArr.pop(0))
+            #     print("Current Depth: ", depthCount)
+            #     depthCount -= 1
+            #     print("\n\n")
+            print_Trench(Node_Start.state)
+            print("Current Depth: ", 0)
+            print("\n\n")
             print("Max Queue Size: ", maxQueueSize)
             print("Total Nodes Expanded: ", nodeCount)
             print("Total Depth: ", depthCount)
@@ -121,12 +137,15 @@ def General_Search(puzzle, heuristic):
             if heuristic == 1:
                 # UCS
                 currHeuristic = 0
+                print("UCS: ", currHeuristic)
             elif heuristic == 2:
                 # A* Tile
-                currHeuristic = get_Heuristic(tmpNode.state)
+                currHeuristic = get_Heuristic_Tile(tmpNode.state)
+                print("TILE: ", currHeuristic)
 
-            else:
-                currHeuristic = 0
+            elif heuristic == 3:
+                currHeuristic = get_Heuristic(tmpNode.state)
+                print("MANHATTAN: ", currHeuristic)
 
             tmpNode.set_Depth(int(currNode.depth) + 1)
             tmpNode.set_Weight(currHeuristic + tmpNode.depth)
@@ -134,6 +153,17 @@ def General_Search(puzzle, heuristic):
             # queue.append(tmpNode)
 
     return
+
+
+def get_Heuristic_Tile(currState):
+    ans = 0
+    for i in range(0, 11):
+        if (i == 4) or (i == 7) or (i == 10):
+            continue
+        if currState[i] != (i+1):
+            ans += 1
+
+    return ans
 
 
 def get_Heuristic(currState):
