@@ -21,6 +21,12 @@ class Node(object):
     def set_Depth(self, depth):
         self.depth = depth
 
+    def set_Time(self, time):
+        self.time = time
+
+    def set_NodesExpanded(self, numExpanded):
+        self.nodesExpanded = numExpanded
+
     def __lt__(self, w2):
         if self.weight < w2.weight:
             return True
@@ -53,12 +59,13 @@ def ProjectStart():
         "What Search would you like? Type '1' for Uniform Cost Search, '2' for A* Misplaced Tile Heurisitic, or '3' for A* Manhattan Distance Heuristic:\n")
 
     # searchType is equal to the heuristic value
-
+    global start
     start = time.time()
     # passes in the list and heuristic value
-    General_Search(testing, searchType)
+    General_Search(testing, int(searchType))
     end = time.time()
     print("Total Time: {}".format(end-start))  # prints total time of search
+    print()
     return
 
 
@@ -67,20 +74,25 @@ def General_Search(puzzle, heuristic):
     Node_Start = Node()
     Node_Start.set_State(puzzle)
     Node_Start.set_Depth(0)
+    Node_Start.set_Time(0)
+    Node_Start.set_NodesExpanded(0)
+    flag = False
+    currLevel = 0
+    newLevel = False
     queue = []
     expandArr = []
     nodeCount = 0
     maxQueueSize = 0
-    depthCount = 0
+    maxDepth = 0
     prntArr = []
-    repeatStates = {}
     currHeuristic = 0
+    dicArr = [{}] * 69
 
     # queue.append(Node_Start)
     heapq.heappush(queue, (0, Node_Start))
 
     while len(queue) > 0:
-
+        flag = False
         if len(queue) > maxQueueSize:  # always updating the size of maxQueueSize
             maxQueueSize = len(queue)
 
@@ -90,62 +102,74 @@ def General_Search(puzzle, heuristic):
         nodeCount += 1
 
         # checks if the state has been seen already. If so, skips the rest of the loop and restarts on next node.
-        repeatStates[str(currNode.state)] = repeatStates.get(
-            str(currNode.state), 0) + 1
-        if repeatStates[str(currNode.state)] > 1:
+        for i in range(currNode.depth):
+            if str(currNode.state) in dicArr[i].keys():
+                flag = True
+                break
+        if flag:
             continue
+        else:
+            dicArr[currNode.depth][str(currNode.state)] = currNode.depth
+
+        if currNode.depth > currLevel:
+            if currNode.depth >= 10:
+                dicArr[currNode.depth - 10] = {}
+            currLevel = currNode.depth
 
         if currNode.state == ans:
-            depthCount = currNode.depth
+            maxDepth = currNode.depth
             # loops backwards tracing goal states parents until reaching start node
             while currNode.parent != None:
-                # prntArr.append(currNode.state)
-                hn = int(currNode.weight) - int(currNode.depth)
-                gn = currNode.depth
-                print("The best state to expand is below with g(n) == ",
-                      gn, " and h(n) == ", currNode.weight)
-                print_Trench(currNode.state)
-                print("Current Depth: ", depthCount)
-                depthCount -= 1
-                print("\n\n")
-                currNode = currNode.parent
+                prntArr.append(currNode)
 
-            # while len(prntArr) > 0:
-            #     print_Trench(prntArr.pop(0))
-            #     print("Current Depth: ", depthCount)
-            #     depthCount -= 1
-            #     print("\n\n")
+                currNode = currNode.parent
             print_Trench(Node_Start.state)
             print("Current Depth: ", 0)
+            print("Time elapsed: ", Node_Start.time)
+            print("Current Nodes Expanded: ", Node_Start.nodesExpanded)
             print("\n\n")
+            for n in reversed(prntArr):
+                hn = int(n.weight) - int(n.depth)
+                gn = n.depth
+                print("The best state to expand is below with g(n) == ",
+                      gn, " and h(n) == ", hn, "\n")
+                print_Trench(n.state)
+                print("Current Depth: ", n.depth)
+                print("Time elapsed: ", n.time)
+                print("Current Nodes Expanded: ", n.nodesExpanded)
+                print("\n\n")
+
             print("Max Queue Size: ", maxQueueSize)
             print("Total Nodes Expanded: ", nodeCount)
-            print("Total Depth: ", depthCount)
+            print("Total Depth: ", maxDepth)
+            # print("Current Heuristic: ", currHeuristic)
             break
 
         # returns an array of all possible child state arrays
-        #print("currNode.state = ", currNode.state)
+        # print("currNode.state = ", currNode.state)
         expandArr = expand_State(currNode.state)
-        #print("expandArr = ", expandArr)
+        # print("expandArr = ", expandArr)
 
         # append each new child state to the queue
         while len(expandArr) > 0:
             tmpNode = Node()
             tmpNode.set_State(expandArr.pop())
             tmpNode.set_Parent(currNode)
+            tmpNode.set_NodesExpanded(nodeCount)
+            tmpNode.set_Time(time.time() - start)
 
             if heuristic == 1:
                 # UCS
                 currHeuristic = 0
-                print("UCS: ", currHeuristic)
+                # print("UCS: ", currHeuristic)
             elif heuristic == 2:
                 # A* Tile
                 currHeuristic = get_Heuristic_Tile(tmpNode.state)
-                print("TILE: ", currHeuristic)
+                # print("TILE: ", currHeuristic)
 
             elif heuristic == 3:
                 currHeuristic = get_Heuristic(tmpNode.state)
-                print("MANHATTAN: ", currHeuristic)
+                # print("MANHATTAN: ", currHeuristic)
 
             tmpNode.set_Depth(int(currNode.depth) + 1)
             tmpNode.set_Weight(currHeuristic + tmpNode.depth)
@@ -169,7 +193,6 @@ def get_Heuristic_Tile(currState):
 def get_Heuristic(currState):
     ans = 0
     tmpVal = 0
-
     d = {1: 0, 2: 1, 3: 2, 4: 3, 5: 5, 6: 6, 7: 8, 8: 9, 9: 11}
     for i in range(1, 10):
 
@@ -206,53 +229,61 @@ def expand_State(currState):
             continue
         # case for index 0 (can only go right)
         if i == 0:
-            while currState[j+1] == 0:
+            while tmp[j+1] == 0:
                 if (j+1 == 4 and tmp[j+1] == 0) or (j+1 == 7 and tmp[j+1] == 0) or (j+1 == 10 and tmp[j+1] == 0):
                     break
                 elif(j+1 == 4 and tmp[j+1] != 0) or (j+1 == 7 and tmp[j+1] != 0) or (j+1 == 10 and tmp[j+1] != 0):
-                    if currState[j+2] == 0:
-                        tmp[j+2], tmp[j] = currState[j], currState[j+2]
+                    if tmp[j+2] == 0:
+                        tmp[j+2], tmp[j] = tmp[j], tmp[j+2]
                         j += 2
 
-                tmp[j+1], tmp[j] = currState[j], currState[j+1]
+                tmp[j+1], tmp[j] = tmp[j], tmp[j+1]
                 j += 1
             returnArr.append(tmp)
             tmp = currState[:]
 
         # covers all positions with 2 possible moves (left or right)
         if i == 1 or i == 2:
-            while currState[j-1] == 0 and (j-1 >= 0):
-                tmp[j-1], tmp[j] = currState[j], currState[j-1]
+            while tmp[j-1] == 0 and (j-1 >= 0):
+                if(j-1 == 4) or (j-1 == 7) or (j-1) == 10:
+                    if(tmp[j-2] == 0):
+                        tmp[j-2], tmp[j] = tmp[j], tmp[j-2]
+                        j -= 2
+                        if(tmp[j+1] == 0):
+                            break
+                        else:
+                            continue
+                tmp[j-1], tmp[j] = tmp[j], tmp[j-1]
                 j -= 1
             returnArr.append(tmp)
             tmp = currState[:]
 
-            while currState[i+1] == 0 and (j+1 <= 12):
+            while tmp[i+1] == 0 and (j+1 <= 12):
                 if (j+1 == 4 and tmp[j+1] == 0) or (j+1 == 7 and tmp[j+1] == 0) or (j+1 == 10 and tmp[j+1] == 0):
                     break
                 elif(j+1 == 4 and tmp[j+1] != 0) or (j+1 == 7 and tmp[j+1] != 0) or (j+1 == 10 and tmp[j+1] != 0):
-                    if currState[j+2] == 0:
-                        tmp[j+2], tmp[j] = currState[j], currState[j+2]
+                    if tmp[j+2] == 0:
+                        tmp[j+2], tmp[j] = tmp[j], tmp[j+2]
                         j += 2
-                tmp[i+1], tmp[i] = currState[i], currState[i+1]
+                tmp[i+1], tmp[i] = tmp[i], tmp[i+1]
                 j += 1
             returnArr.append(tmp)
             tmp = currState[:]
 
         # Move left 2 or right 1
         if i == 5 or i == 8 or i == 11:
-            if currState[i-2] == 0:
-                tmp[i-2], tmp[i] = currState[i], currState[i-2]
+            if tmp[i-2] == 0:
+                tmp[i-2], tmp[i] = tmp[i], tmp[i-2]
                 returnArr.append(tmp)
                 tmp = currState[:]
-            while currState[i+1] == 0 and (j+1 <= 12):
+            while tmp[i+1] == 0 and (j+1 <= 12):
                 if (j+1 == 4 and tmp[j+1] == 0) or (j+1 == 7 and tmp[j+1] == 0) or (j+1 == 10 and tmp[j+1] == 0):
                     break
                 elif(j+1 == 4 and tmp[j+1] != 0) or (j+1 == 7 and tmp[j+1] != 0) or (j+1 == 10 and tmp[j+1] != 0):
-                    if currState[j+2] == 0:
-                        tmp[j+2], tmp[j] = currState[j], currState[j+2]
+                    if tmp[j+2] == 0:
+                        tmp[j+2], tmp[j] = tmp[j], tmp[j+2]
                         j += 2
-                tmp[i+1], tmp[i] = currState[i], currState[i+1]
+                tmp[i+1], tmp[i] = tmp[i], tmp[i+1]
                 j += 1
             returnArr.append(tmp)
             tmp = currState[:]
@@ -260,30 +291,47 @@ def expand_State(currState):
         # covers all positions with 3 possible moves (left, up (hole), right)
         if i == 3 or i == 6 or i == 9:
             if currState[i-1] == 0:
-                tmp[i-1], tmp[i] = currState[i], currState[i-1]
+                tmp[i-1], tmp[i] = tmp[i], tmp[i-1]
                 returnArr.append(tmp)
                 tmp = currState[:]
             if currState[i+1] == 0:
-                tmp[i+1], tmp[i] = currState[i], currState[i+1]
+                tmp[i+1], tmp[i] = tmp[i], tmp[i+1]
                 returnArr.append(tmp)
                 tmp = currState[:]
             if currState[i+2] == 0:
-                tmp[i+2], tmp[i] = currState[i], currState[i+2]
+                tmp[i+2], tmp[i] = tmp[i], tmp[i+2]
                 returnArr.append(tmp)
                 tmp = currState[:]
 
         # covers all hole positions
         if i == 4 or i == 7 or i == 10:
             if currState[i-1] == 0:
-                tmp[i-1], tmp[i] = currState[i], currState[i-1]
+                tmp[i-1], tmp[i] = tmp[i], tmp[i-1]
                 returnArr.append(tmp)
                 tmp = currState[:]
 
         if i == 12:
-            if currState[j-1] == 0:
-                tmp[i-1], tmp[i] = currState[i], currState[i-1]
-                returnArr.append(tmp)
-                tmp = currState[:]
+            # if (j-1 == 10) or (j-1 == 7):
+            #     if currState[j-2] == 0:
+            #         tmp[j-2], tmp[i] = currState[i], currState[j-2]
+            # if currState[j-1] == 0:
+
+            #     tmp[i-1], tmp[i] = currState[i], currState[i-1]
+            #     returnArr.append(tmp)
+            #     tmp = currState[:]
+            while tmp[j-1] == 0 and (j-1 >= 0):
+                if(j-1 == 4) or (j-1 == 7) or (j-1) == 10:
+                    if(tmp[j-2] == 0):
+                        tmp[j-2], tmp[j] = tmp[j], tmp[j-2]
+                        j -= 2
+                        if(tmp[j+1] == 0):
+                            break
+                        else:
+                            continue
+                tmp[j-1], tmp[j] = tmp[j], tmp[j-1]
+                j -= 1
+            returnArr.append(tmp)
+            tmp = currState[:]
 
     return returnArr
 
@@ -304,7 +352,7 @@ def print_Trench(trench_arr):
 
     for i in range(len(trench_arr)):
         print(arrTop[i], end=" ")
-    print("\n")
+    print()
     for i in range(len(trench_arr)):
         print(trench_arr[i], end=" ")
     print("\n")
