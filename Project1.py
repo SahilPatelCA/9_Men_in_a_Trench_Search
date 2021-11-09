@@ -3,37 +3,38 @@ import time
 import heapq
 
 
-class Node(object):
+class Node(object):  # Node class. Includes all node attributes
     def __init__(self):
 
         self.state = []
         self.parent = None
 
-    def set_State(self, state):
+    def set_State(self, state):  # stores current state (array) at the node
         self.state = state
 
-    def set_Parent(self, parent):
+    def set_Parent(self, parent):  # stores the parent of the current node
         self.parent = parent
 
-    def set_Weight(self, weight):
+    def set_Weight(self, weight):  # stores the weight g(n) + f(n) of current node
         self.weight = weight
 
-    def set_Depth(self, depth):
+    def set_Depth(self, depth):  # stores the depth of the current Node
         self.depth = depth
 
-    def set_Time(self, time):
+    def set_Time(self, time):  # stores the time at which the current node was searched
         self.time = time
 
+    # stores the number of nodes expanded until the current node
     def set_NodesExpanded(self, numExpanded):
         self.nodesExpanded = numExpanded
 
-    def __lt__(self, w2):
+    def __lt__(self, w2):  # this overrides the < opporator for node comparison. Forces comparison of the node.weight
         if self.weight < w2.weight:
             return True
         else:
             return False
 
-    def __gt__(self, w2):
+    def __gt__(self, w2):  # this overrides the > opporator for node comparison. Forces comparison of the node.weight
         if self.weight > w2.weight:
             return True
         else:
@@ -41,41 +42,30 @@ class Node(object):
 
 
 def ProjectStart():
-    # problemBase = input(
-    #     "Would you like to use the default puzzle or input your own? Enter '1' default or '2' custom:\n")
-    # if problemBase == 1:
-    #     # zero's represent blank spaces in the trench.
-    #     trenchOrder = [0, 2, 3, 4, 0, 5, 6, 0, 7, 8, 0, 9, 1]
-    # else:
-    #     # allows the user to input one 13 number long string that mimicks the puzzle
-    #     trenchOrder = list(map(int, input(
-    #         "Enter the numbers 1-9 (using 0 for empty spots) (remember the indexs 4, 7, and 10 represent the holes in the trench). \n For example:[0,2,3,4,0(hole),5,6,0(hole),7,8,0(hole),9,1]: ").strip().split()))[:13]
+    # Initial starting state
     trenchOrder = [0, 2, 3, 4, 0, 5, 6, 0, 7, 8, 0, 9, 1]
-    test = [1, 2, 3, 4, 0, 5, 6, 0, 7, 0, 8, 9, 0]
-    Depth0 = [1, 2, 3, 4, 0, 5, 6, 0, 7, 8, 0, 9, 0]
+
+    # Semi-solved starting state (for testing)
     Depth14 = [1, 2, 0, 0, 0, 0, 3, 5, 4, 6, 8, 7, 9]
-    Step6 = [2, 3, 5, 6, 4, 0, 0, 7, 0, 8, 0, 9, 1]  # memory error for UCS
-    Depth46 = [2, 3, 5, 6, 4, 8, 0, 1, 0, 0, 0, 7, 9]
-    test15 = [2, 3, 5, 0, 0, 0, 0, 1, 4, 6, 8, 7, 9]
-    test23 = [1, 2, 3, 4, 0, 0, 0, 5, 0, 6, 8, 7, 9]
-    test20 = [1, 0, 0, 0, 0, 2, 3, 5, 4, 6, 8, 7, 9]
 
     searchType = input(
         "What Search would you like? Type '1' for Uniform Cost Search, '2' for A* Misplaced Tile Heurisitic, or '3' for A* Manhattan Distance Heuristic:\n")
 
     # searchType is equal to the heuristic value
     global start
+    global end
     start = time.time()
     # passes in the list and heuristic value
     General_Search(Depth14, int(searchType))
-    end = time.time()
-    print("Total Time: {}".format(end-start))  # prints total time of search
+    # end = time.time()
+    # print("Total Time: {}".format(end-start))  # prints total time of search
     print()
     return
 
 
 def General_Search(puzzle, heuristic):
     ans = [1, 2, 3, 4, 0, 5, 6, 0, 7, 8, 0, 9, 0]  # Goal state
+    # initiates the starting node to default values before entering loop
     Node_Start = Node()
     Node_Start.set_State(puzzle)
     Node_Start.set_Depth(0)
@@ -83,28 +73,25 @@ def General_Search(puzzle, heuristic):
     Node_Start.set_NodesExpanded(0)
     flag = False
     currLevel = 0
-    newLevel = False
     queue = []
     expandArr = []
     nodeCount = 0
     maxQueueSize = 0
-    maxDepth = 0
     prntArr = []
     currHeuristic = 0
+    # array of dictionaries. Each indicy is the dictionary for the nodes at a specific depth
     dicArr = [{}] * 69
 
     # queue.append(Node_Start)
     heapq.heappush(queue, (0, Node_Start))
 
     while len(queue) > 0:
-        flag = False
+        flag = False  # reset flag
         if len(queue) > maxQueueSize:  # always updating the size of maxQueueSize
             maxQueueSize = len(queue)
 
-        # currNode = queue.pop(0)  # Set the first state in the queue to currNode
+          # Set the first state in the queue to currNode
         currNode = heapq.heappop(queue)[1]
-
-        nodeCount += 1
 
         # checks if the state has been seen already. If so, skips the rest of the loop and restarts on next node.
         for i in range(currNode.depth):
@@ -114,25 +101,32 @@ def General_Search(puzzle, heuristic):
         if flag:
             continue
         else:
+            # adds the current state to the dictionary array (dicArr), more specifically to the dictionary at the indicy of the node's depth
             dicArr[currNode.depth][str(currNode.state)] = currNode.depth
 
+        # checks if reach a new depth level
         if currNode.depth > currLevel:
+            # "deletes" all dictionaries in indicies 10 less than current indicy (depth)
             if currNode.depth >= 10:
                 dicArr[currNode.depth - 10] = {}
             currLevel = currNode.depth
 
+        # Runs if goal state is found
         if currNode.state == ans:
-            maxDepth = currNode.depth
+            end = time.time()
             # loops backwards tracing goal states parents until reaching start node
             while currNode.parent != None:
                 prntArr.append(currNode)
-
                 currNode = currNode.parent
+
+            # Print starting state information
             print_Trench(Node_Start.state)
             print("Current Depth: ", 0)
             print("Time elapsed: ", Node_Start.time)
             print("Current Nodes Expanded: ", Node_Start.nodesExpanded)
             print("\n\n")
+
+            # loop through prntArr and print out the desired information for each node on the Solution Path
             for n in reversed(prntArr):
                 hn = int(n.weight) - int(n.depth)
                 gn = n.depth
@@ -145,15 +139,13 @@ def General_Search(puzzle, heuristic):
                 print("\n\n")
 
             print("Max Queue Size: ", maxQueueSize)
-            print("Total Nodes Expanded: ", nodeCount)
-            print("Total Depth: ", maxDepth)
-            # print("Current Heuristic: ", currHeuristic)
+            print("\n\n")
             break
 
         # returns an array of all possible child state arrays
-        # print("currNode.state = ", currNode.state)
         expandArr = expand_State(currNode.state)
-        # print("expandArr = ", expandArr)
+        # nodeCount = number of nodes expanded (searched)
+        nodeCount += 1
 
         # append each new child state to the queue
         while len(expandArr) > 0:
@@ -166,15 +158,12 @@ def General_Search(puzzle, heuristic):
             if heuristic == 1:
                 # UCS
                 currHeuristic = 0
-                # print("UCS: ", currHeuristic)
             elif heuristic == 2:
-                # A* Tile
+                # A* Misplaced Tile
                 currHeuristic = get_Heuristic_Tile(tmpNode.state)
-                # print("TILE: ", currHeuristic)
-
             elif heuristic == 3:
+                # A* Manhattan Distance
                 currHeuristic = get_Heuristic(tmpNode.state)
-                # print("MANHATTAN: ", currHeuristic)
 
             tmpNode.set_Depth(int(currNode.depth) + 1)
             tmpNode.set_Weight(currHeuristic + tmpNode.depth)
@@ -314,16 +303,8 @@ def expand_State(currState):
                 tmp[i-1], tmp[i] = tmp[i], tmp[i-1]
                 returnArr.append(tmp)
                 tmp = currState[:]
-
+        # covers last position
         if i == 12:
-            # if (j-1 == 10) or (j-1 == 7):
-            #     if currState[j-2] == 0:
-            #         tmp[j-2], tmp[i] = currState[i], currState[j-2]
-            # if currState[j-1] == 0:
-
-            #     tmp[i-1], tmp[i] = currState[i], currState[i-1]
-            #     returnArr.append(tmp)
-            #     tmp = currState[:]
             while tmp[j-1] == 0 and (j-1 >= 0):
                 if(j-1 == 4) or (j-1 == 7) or (j-1) == 10:
                     if(tmp[j-2] == 0):
@@ -347,9 +328,7 @@ def print_Trench(trench_arr):
 
     # set each indicy at 4,7,10 to the respective values in Trench_arr and then remove the indicies from the array.
     arrTop[3] = trench_arr[4]
-    # trench_arr.pop(4)
     arrTop[5] = trench_arr[7]
-    # trench_arr.pop(4)
     arrTop[7] = trench_arr[10]
     trench_arr.pop(4)
     trench_arr.pop(6)
