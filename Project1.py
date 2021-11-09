@@ -52,8 +52,13 @@ def ProjectStart():
     #         "Enter the numbers 1-9 (using 0 for empty spots) (remember the indexs 4, 7, and 10 represent the holes in the trench). \n For example:[0,2,3,4,0(hole),5,6,0(hole),7,8,0(hole),9,1]: ").strip().split()))[:13]
     trenchOrder = [0, 2, 3, 4, 0, 5, 6, 0, 7, 8, 0, 9, 1]
     test = [1, 2, 3, 4, 0, 5, 6, 0, 7, 0, 8, 9, 0]
-    testCorrect = [1, 2, 3, 4, 0, 5, 6, 0, 7, 8, 0, 9, 0]
-    testing = [1, 2, 0, 0, 0, 0, 3, 5, 4, 6, 8, 7, 9]
+    Depth0 = [1, 2, 3, 4, 0, 5, 6, 0, 7, 8, 0, 9, 0]
+    Depth14 = [1, 2, 0, 0, 0, 0, 3, 5, 4, 6, 8, 7, 9]
+    Step6 = [2, 3, 5, 6, 4, 0, 0, 7, 0, 8, 0, 9, 1]  # memory error for UCS
+    Depth46 = [2, 3, 5, 6, 4, 8, 0, 1, 0, 0, 0, 7, 9]
+    test15 = [2, 3, 5, 0, 0, 0, 0, 1, 4, 6, 8, 7, 9]
+    test23 = [1, 2, 3, 4, 0, 0, 0, 5, 0, 6, 8, 7, 9]
+    test20 = [1, 0, 0, 0, 0, 2, 3, 5, 4, 6, 8, 7, 9]
 
     searchType = input(
         "What Search would you like? Type '1' for Uniform Cost Search, '2' for A* Misplaced Tile Heurisitic, or '3' for A* Manhattan Distance Heuristic:\n")
@@ -62,7 +67,7 @@ def ProjectStart():
     global start
     start = time.time()
     # passes in the list and heuristic value
-    General_Search(testing, int(searchType))
+    General_Search(Depth14, int(searchType))
     end = time.time()
     print("Total Time: {}".format(end-start))  # prints total time of search
     print()
